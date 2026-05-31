@@ -99,8 +99,42 @@
   .pill{display:inline-block;background:rgba(255,255,255,.06);border:1px solid var(--panel-border);
     border-radius:6px;padding:1px 6px;margin:1px;font-size:9.5px;color:#cfcfe6}
 
+  /* 虚拟按键 */
+  .vpad{position:fixed;bottom:0;left:0;right:0;z-index:10;display:none;
+    padding:12px 16px env(safe-area-inset-bottom);background:linear-gradient(to top,rgba(10,10,18,.92),transparent);
+    backdrop-filter:blur(8px);pointer-events:none}
+  .vpad-zone{display:flex;gap:12px;pointer-events:auto}
+  .vpad-left{justify-content:flex-start}
+  .vpad-right{justify-content:flex-end}
+  .vbtn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
+    border-radius:12px;color:#fff;font-size:20px;font-weight:700;
+    box-shadow:0 4px 16px rgba(0,0,0,.4);transition:all .1s;
+    display:flex;align-items:center;justify-content:center;user-select:none;
+    touch-action:none;position:relative}
+  .vbtn:active{background:rgba(124,92,255,.35);transform:scale(.92);box-shadow:0 2px 8px rgba(124,92,255,.5)}
+  .vbtn.hold{width:56px;height:56px;font-size:14px;letter-spacing:1px}
+  .vbtn.dpad{width:64px;height:64px}
+  .vbtn.act{width:68px;height:68px}
+  .vbtn.pause{width:48px;height:48px;font-size:16px}
+  .dpad-wrap{display:grid;grid-template:"t t" "l r" "b b";gap:6px;grid-template-columns:64px 64px;grid-template-rows:64px 64px 64px}
+  .dpad-wrap .vbtn:nth-child(1){grid-area:l}
+  .dpad-wrap .vbtn:nth-child(2){grid-area:r}
+  .dpad-wrap .vbtn:nth-child(3){grid-area:b}
+
   @media (max-width:720px){
     .hint-panel{display:none}
+    .vpad{display:flex;justify-content:space-between}
+    /* 移动端纵向布局 */
+    body{align-items:flex-start;padding-top:12px}
+    .stage{flex-direction:column;gap:12px;padding:12px;width:100%;max-width:500px;margin:0 auto;
+      transform:none!important}
+    .side{width:100%;flex-direction:row;gap:12px;align-items:stretch}
+    .side.left,.side.right{align-items:stretch}
+    .side .panel{flex:1;min-width:0}
+    .board-wrap{order:-1;margin:0 auto}
+    /* Hold/Next 横向排列 */
+    .mini canvas{max-width:100%}
+    .next-list{flex-direction:row;flex-wrap:wrap;justify-content:center}
   }
 </style>
 </head>
@@ -158,6 +192,25 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- 虚拟按键(仅移动端显示) -->
+  <div class="vpad">
+    <div class="vpad-zone vpad-left">
+      <button class="vbtn hold" id="vHold">Hold</button>
+      <div class="dpad-wrap">
+        <button class="vbtn dpad" id="vLeft">←</button>
+        <button class="vbtn dpad" id="vRight">→</button>
+        <button class="vbtn dpad" id="vDown">↓</button>
+      </div>
+    </div>
+    <div class="vpad-zone vpad-right">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <button class="vbtn act" id="vRotate">↻</button>
+        <button class="vbtn act" id="vDrop">⇩</button>
+      </div>
+      <button class="vbtn pause" id="vPause">⏸</button>
     </div>
   </div>
 
@@ -227,13 +280,27 @@
 
   // ---------- 自适应尺寸 ----------
   function fit(){
-    // 以视口高度为约束,给侧栏留出空间
-    const availH = Math.min(window.innerHeight-40, 760);
-    const availW = window.innerWidth-40;
-    let cell = Math.floor(availH/ROWS);
-    cell = Math.max(18, Math.min(cell, 38));
-    // 整体宽度若超出则缩放 stage
-    CELL = cell;
+    // 移动端检测
+    const isMobile = window.innerWidth <= 720;
+
+    if(isMobile){
+      // 移动端:纵向布局,棋盘占满可用宽度
+      const vpadHeight = 200; // 虚拟按键区域预留高度
+      const availW = Math.min(window.innerWidth - 32, 500); // 最大 500px
+      const availH = window.innerHeight - vpadHeight - 100; // 减去按键和顶部空间
+
+      let cell = Math.floor(availW / COLS);
+      cell = Math.max(20, Math.min(cell, 42)); // 移动端允许更大的格子
+      CELL = cell;
+    } else {
+      // 桌面端:原有逻辑
+      const availH = Math.min(window.innerHeight-40, 760);
+      const availW = window.innerWidth-40;
+      let cell = Math.floor(availH/ROWS);
+      cell = Math.max(18, Math.min(cell, 38));
+      CELL = cell;
+    }
+
     const bw = COLS*CELL, bh = ROWS*CELL;
     const dpr = Math.min(window.devicePixelRatio||1, 2);
     for(const [cv,w,h] of [[boardCv,bw,bh],[fxCv,bw,bh]]){
@@ -245,10 +312,14 @@
     // mini 画布 dpr:重置缓存标志以便 resize 时重新设置
     holdCv._dprSet=false;
     setupMini(holdCv,hctx);
-    // 缩放整个舞台以适配窄屏
-    const totalW = stage.scrollWidth;
-    const scale = Math.min(1, (window.innerWidth-16)/totalW);
-    stage.style.transform = scale<1 ? `scale(${scale})` : 'none';
+
+    // 桌面端才需要缩放整个舞台
+    if(!isMobile){
+      const totalW = stage.scrollWidth;
+      const scale = Math.min(1, (window.innerWidth-16)/totalW);
+      stage.style.transform = scale<1 ? `scale(${scale})` : 'none';
+    }
+
     draw();
     drawHold();
     drawNext();
@@ -781,7 +852,9 @@
     particles=[];
     if(lockTimer!==null){clearTimeout(lockTimer);lockTimer=null;}
     if(softTimer!==null){clearInterval(softTimer);softTimer=null;} // 清除软降定时器
+    if(vSoftTimer!==null){clearInterval(vSoftTimer);vSoftTimer=null;} // 清除虚拟按键软降
     stopDAS(); // 清除 DAS/ARR 定时器
+    vStopDAS(); // 清除虚拟按键 DAS
     lockResets=0;
     cur=spawn();
     lastActionWasRotation=false; // 重置旋转标志
@@ -797,7 +870,9 @@
       // 暂停时清除所有输入定时器,防止方块在暂停期间继续移动/锁定
       if(lockTimer!==null){clearTimeout(lockTimer);lockTimer=null;}
       if(softTimer!==null){clearInterval(softTimer);softTimer=null;}
+      if(vSoftTimer!==null){clearInterval(vSoftTimer);vSoftTimer=null;} // 清除虚拟按键软降
       stopDAS();
+      vStopDAS(); // 清除虚拟按键 DAS
       showOverlay('已暂停','按 <kbd>P</kbd> 继续','继续');
     }
     else if(state==='pause'){ state='play'; overlay.classList.remove('show'); lastTime=performance.now(); }
@@ -806,7 +881,9 @@
     state='over';
     if(lockTimer!==null){clearTimeout(lockTimer);lockTimer=null;}
     if(softTimer!==null){clearInterval(softTimer);softTimer=null;} // 清除软降定时器
+    if(vSoftTimer!==null){clearInterval(vSoftTimer);vSoftTimer=null;} // 清除虚拟按键软降
     stopDAS(); // 清除 DAS/ARR 定时器
+    vStopDAS(); // 清除虚拟按键 DAS
     const isBest = score>=best;
     showOverlay('GAME OVER',
       `得分 <b style="color:#fff">${score.toLocaleString()}</b> · 消除 ${lines} 行 · 等级 ${level}` +
@@ -895,6 +972,43 @@
     }
     touchStart=null;
   },{passive:true});
+
+  // ---------- 虚拟按键 ----------
+  const vHold=document.getElementById('vHold'), vLeft=document.getElementById('vLeft'),
+        vRight=document.getElementById('vRight'), vDown=document.getElementById('vDown'),
+        vRotate=document.getElementById('vRotate'), vDrop=document.getElementById('vDrop'),
+        vPause=document.getElementById('vPause');
+
+  let vDasTimer=null, vArrTimer=null, vDasDir=0, vSoftTimer=null;
+  function vStartDAS(dir){
+    vStopDAS();
+    vDasDir=dir;
+    tryMove(dir,0);
+    vDasTimer=setTimeout(()=>{
+      vArrTimer=setInterval(()=>tryMove(vDasDir,0),ARR);
+    },DAS);
+  }
+  function vStopDAS(){ if(vDasTimer)clearTimeout(vDasTimer); if(vArrTimer)clearInterval(vArrTimer); vDasTimer=vArrTimer=null; }
+
+  // 阻止虚拟按键的默认行为和事件冒泡
+  [vHold,vLeft,vRight,vDown,vRotate,vDrop,vPause].forEach(btn=>{
+    btn.addEventListener('touchstart',(e)=>{e.preventDefault();e.stopPropagation();},{passive:false});
+    btn.addEventListener('touchend',(e)=>{e.preventDefault();e.stopPropagation();},{passive:false});
+    btn.addEventListener('touchmove',(e)=>{e.preventDefault();e.stopPropagation();},{passive:false});
+  });
+
+  vLeft.addEventListener('touchstart',()=>{ if(state==='play') vStartDAS(-1); });
+  vLeft.addEventListener('touchend',vStopDAS);
+  vRight.addEventListener('touchstart',()=>{ if(state==='play') vStartDAS(1); });
+  vRight.addEventListener('touchend',vStopDAS);
+  vDown.addEventListener('touchstart',()=>{
+    if(state==='play' && !vSoftTimer){ softDrop(); vSoftTimer=setInterval(softDrop,40); }
+  });
+  vDown.addEventListener('touchend',()=>{ if(vSoftTimer){clearInterval(vSoftTimer);vSoftTimer=null;} });
+  vRotate.addEventListener('touchstart',()=>{ if(state==='play') rotate(1); });
+  vDrop.addEventListener('touchstart',()=>{ if(state==='play') hardDrop(); });
+  vHold.addEventListener('touchstart',()=>{ if(state==='play') holdSwap(); });
+  vPause.addEventListener('touchstart',()=>{ if(state==='play'||state==='pause') togglePause(); });
 
   // ---------- 启动 ----------
   ovBtn.addEventListener('click',()=>{ if(state==='pause'){togglePause();} else startGame(); });

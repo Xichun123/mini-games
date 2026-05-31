@@ -120,7 +120,8 @@
   .vbtn.act{width:68px;height:68px}
   .vbtn.hard{width:68px;height:68px;font-size:22px}
   .vbtn.pause{width:48px;height:48px;font-size:16px}
-  .dpad-wrap{display:flex;gap:6px}
+  .dpad-wrap{display:grid;grid-template-columns:64px 64px 64px;gap:6px}
+  .dpad-wrap .vbtn:last-child{grid-column:3}
   .action-stack{display:flex;flex-direction:column;gap:6px}
 
   @media (max-width:720px), (pointer:coarse){
@@ -156,6 +157,7 @@
     .vpad-right{align-items:flex-end}
     .vpad-right .vbtn.hold{width:68px;height:58px;font-size:13px}
     .vbtn.dpad{width:58px;height:58px}
+    .dpad-wrap{grid-template-columns:58px 58px 58px}
   }
 
   @media (pointer:coarse) and (orientation:landscape) and (max-height:500px){
@@ -234,12 +236,14 @@
     <div class="vpad-zone vpad-left">
       <div class="dpad-wrap">
         <button class="vbtn dpad" id="vLeft">←</button>
-        <button class="vbtn dpad" id="vDown">↓</button>
         <button class="vbtn dpad" id="vRight">→</button>
       </div>
     </div>
     <div class="vpad-zone vpad-right">
-      <button class="vbtn hard" id="vDrop">⇩</button>
+      <div class="action-stack">
+        <button class="vbtn dpad" id="vDown">↓</button>
+        <button class="vbtn hard" id="vDrop">⇩</button>
+      </div>
       <div class="action-stack">
         <button class="vbtn hold" id="vHold">Hold</button>
         <button class="vbtn act" id="vRotate">↻</button>

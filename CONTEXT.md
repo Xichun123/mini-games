@@ -13,7 +13,7 @@ The down control in Mobile Tetris controls. A tap moves the active piece down by
 _Avoid_: Hidden hard drop, instant lock
 
 **Mobile hard drop**:
-The dedicated hard drop button in Mobile Tetris controls. It uses the former bottom action position beside the Hold/rotate stack.
+The dedicated hard drop button in Mobile Tetris controls. It sits below the Mobile down control in the bottom-right action cluster.
 _Avoid_: Hidden hard drop gesture, replacing the down control
 
 **Mobile Tetris information panel**:
@@ -37,12 +37,12 @@ The Hold control in Mobile Tetris controls. Its action button sits above the rot
 _Avoid_: Hidden Hold gesture, side-by-side Hold and rotate pair
 
 **Mobile action controls**:
-The bottom-right action cluster in Mobile Tetris controls. It places hard drop in the former Hold position, with Hold stacked above rotate beside it.
+The bottom-right action cluster in Mobile Tetris controls. It places the Mobile down control above hard drop, with Hold stacked above rotate beside it.
 _Avoid_: Pause button, side-by-side Hold and rotate pair
 
 **Mobile movement controls**:
-The bottom-left movement trio in Mobile Tetris controls. It places left, down, and right in a single horizontal row.
-_Avoid_: Direction pad, replacing down with hard drop
+The bottom-left movement pair in Mobile Tetris controls. It places left and right in a single row with a visible empty gap between them.
+_Avoid_: Direction pad, filling the middle gap
 
 **Mobile pause entry**:
 The pause control for mobile Tetris. It belongs with the information panel rather than the piece movement controls.
@@ -52,7 +52,7 @@ _Avoid_: Bottom pause button, movement control
 
 Developer: Should mobile Tetris mirror every keyboard action?
 
-Domain expert: No. Mobile Tetris controls should stay compact: left, right, down, hard drop, Hold, and rotate.
+Domain expert: No. Mobile Tetris controls should stay compact: left, right, down, hard drop, Hold, and rotate, while keeping left and right separated by an empty gap.
 
 Developer: Should the mobile status area include Best score and Combo Max?
 
@@ -76,7 +76,7 @@ Domain expert: No. The Mobile down control is a repeat soft drop, not a hidden h
 
 Developer: Should mobile include a separate hard drop action?
 
-Domain expert: Yes. Mobile hard drop is a dedicated bottom action button, not a down-button gesture.
+Domain expert: Yes. Mobile hard drop is a dedicated bottom action button under the down button, not a down-button gesture.
 
 Developer: Is pause one of the bottom movement controls on mobile?
 
@@ -88,4 +88,4 @@ Domain expert: The Mobile Hold control button sits above rotate, and the Hold pr
 
 Developer: Should Hold and rotate be stacked vertically on mobile?
 
-Domain expert: Yes. Mobile action controls place Hold above rotate, with hard drop beside that stack.
+Domain expert: Yes. Mobile action controls place down above hard drop, beside the Hold-above-rotate stack.

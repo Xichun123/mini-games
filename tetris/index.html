@@ -118,8 +118,10 @@
   .vbtn.hold{width:56px;height:56px;font-size:14px;letter-spacing:1px}
   .vbtn.dpad{width:64px;height:64px}
   .vbtn.act{width:68px;height:68px}
+  .vbtn.hard{width:68px;height:68px;font-size:22px}
   .vbtn.pause{width:48px;height:48px;font-size:16px}
   .dpad-wrap{display:flex;gap:6px}
+  .action-stack{display:flex;flex-direction:column;gap:6px}
 
   @media (max-width:720px), (pointer:coarse){
     .hint-panel{display:none}
@@ -152,7 +154,7 @@
     .next-list{flex-direction:column;gap:4px;justify-content:center}
     .vpad-left{align-items:flex-end}
     .vpad-right{align-items:flex-end}
-    .vpad-right .vbtn.hold{width:68px;height:68px;font-size:13px}
+    .vpad-right .vbtn.hold{width:68px;height:58px;font-size:13px}
     .vbtn.dpad{width:58px;height:58px}
   }
 
@@ -237,8 +239,11 @@
       </div>
     </div>
     <div class="vpad-zone vpad-right">
-      <button class="vbtn hold" id="vHold">Hold</button>
-      <button class="vbtn act" id="vRotate">↻</button>
+      <button class="vbtn hard" id="vDrop">⇩</button>
+      <div class="action-stack">
+        <button class="vbtn hold" id="vHold">Hold</button>
+        <button class="vbtn act" id="vRotate">↻</button>
+      </div>
     </div>
   </div>
 
@@ -946,7 +951,7 @@
     ovBig.textContent='NEON TETRIS';
     ovBtn.textContent='Start';
     ovSub.innerHTML = isTouchLayout()
-      ? 'Swipe-free mobile controls<br><span style="font-size:12px">Move · Soft Drop · Rotate · Hold</span>'
+      ? 'Swipe-free mobile controls<br><span style="font-size:12px">Move · Soft Drop · Hard Drop · Hold</span>'
       : 'Classic play × creative rules<br><span style="font-size:12px">SRS · 7-bag · T-Spin · Combo · Hold</span><br><br>'+
         '<span style="font-size:12px">Keyboard:<kbd>←→</kbd><kbd>↓</kbd> move · <kbd>↑</kbd> rotate · <kbd>Space</kbd> hard drop · <kbd>C</kbd> hold</span>';
   }
@@ -1035,7 +1040,8 @@
   // ---------- 虚拟按键 ----------
   const vHold=document.getElementById('vHold'), vLeft=document.getElementById('vLeft'),
         vRight=document.getElementById('vRight'), vDown=document.getElementById('vDown'),
-        vRotate=document.getElementById('vRotate'), vPause=document.getElementById('vPause');
+        vRotate=document.getElementById('vRotate'), vDrop=document.getElementById('vDrop'),
+        vPause=document.getElementById('vPause');
 
   let vDasTimer=null, vArrTimer=null, vDasDir=0, vSoftTimer=null;
   function vStartDAS(dir){
@@ -1052,14 +1058,14 @@
   // 更新虚拟按键状态(根据游戏状态启用/禁用)
   function updateVirtualButtons(){
     const isPlayable = (state==='play');
-    [vHold,vLeft,vRight,vDown,vRotate].forEach(btn=>{
+    [vHold,vLeft,vRight,vDown,vRotate,vDrop].forEach(btn=>{
       if(isPlayable) btn.classList.remove('disabled');
       else btn.classList.add('disabled');
     });
   }
 
   // 阻止虚拟按键的默认行为和事件冒泡
-  [vHold,vLeft,vRight,vDown,vRotate,vPause].forEach(btn=>{
+  [vHold,vLeft,vRight,vDown,vRotate,vDrop,vPause].forEach(btn=>{
     btn.addEventListener('touchstart',(e)=>{e.preventDefault();e.stopPropagation();},{passive:false});
     btn.addEventListener('touchend',(e)=>{e.preventDefault();e.stopPropagation();},{passive:false});
     btn.addEventListener('touchmove',(e)=>{e.preventDefault();e.stopPropagation();},{passive:false});
@@ -1122,6 +1128,15 @@
     setTimeout(()=>removePressedClass(vRotate), 100);
   });
   vRotate.addEventListener('click',(e)=>handleVirtualClick(e,()=>{ flashVirtualButton(vRotate); if(state==='play') rotate(1); }));
+
+  vDrop.addEventListener('pointerdown',(e)=>{
+    e.preventDefault();
+    markVirtualPointer();
+    addPressedClass(vDrop);
+    if(state==='play') hardDrop();
+    setTimeout(()=>removePressedClass(vDrop), 100);
+  });
+  vDrop.addEventListener('click',(e)=>handleVirtualClick(e,()=>{ flashVirtualButton(vDrop); if(state==='play') hardDrop(); }));
 
   vHold.addEventListener('pointerdown',(e)=>{
     e.preventDefault();

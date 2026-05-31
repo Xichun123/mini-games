@@ -58,6 +58,8 @@
   .mini{display:flex;flex-direction:column;align-items:center;gap:10px}
   .mini canvas{display:block}
   .next-list{display:flex;flex-direction:column;gap:6px;align-items:center}
+  .panel-top{display:block}
+  .vbtn.pause.mobile-pause-entry{display:none}
 
   /* 顶部标题 */
   .title{position:absolute;top:-2px;left:50%;transform:translateX(-50%);
@@ -117,37 +119,48 @@
   .vbtn.dpad{width:64px;height:64px}
   .vbtn.act{width:68px;height:68px}
   .vbtn.pause{width:48px;height:48px;font-size:16px}
-  .dpad-wrap{display:grid;grid-template:"t t" "l r" "b b";gap:6px;grid-template-columns:64px 64px;grid-template-rows:64px 64px 64px}
-  .dpad-wrap .vbtn:nth-child(1){grid-area:l}
-  .dpad-wrap .vbtn:nth-child(2){grid-area:r}
-  .dpad-wrap .vbtn:nth-child(3){grid-area:b}
+  .dpad-wrap{display:flex;gap:6px}
 
   @media (max-width:720px), (pointer:coarse){
     .hint-panel{display:none}
-    .vpad{display:flex;justify-content:space-between}
-    /* 移动端纵向布局 */
+    .vpad{display:flex;justify-content:space-between;min-height:170px;
+      padding:10px 14px calc(10px + env(safe-area-inset-bottom))}
     body{align-items:flex-start;padding-top:0;padding-bottom:0}
-    .stage{flex-direction:column;gap:12px;padding:12px 12px calc(228px + env(safe-area-inset-bottom));
-      width:100%;height:100vh;height:100dvh;max-width:500px;max-height:100vh;max-height:100dvh;margin:0 auto;
-      transform:none!important}
-    .side{width:100%;flex-direction:row;gap:12px;align-items:stretch}
-    .side.left,.side.right{align-items:stretch}
-    .side .panel{flex:1;min-width:0}
-    .board-wrap{order:-1;margin:0 auto;max-width:100%}
+    .stage{display:grid;grid-template-columns:minmax(0,1fr) clamp(94px,28vw,112px);
+      grid-template-rows:auto 1fr;gap:8px 10px;align-items:start;
+      padding:8px 8px calc(180px + env(safe-area-inset-bottom));
+      width:100%;height:100vh;height:100dvh;max-width:none;max-height:100vh;max-height:100dvh;margin:0 auto;
+      overflow:hidden;transform:none!important}
+    .side{width:100%;gap:8px}
+    .side.left{grid-column:2;grid-row:2;display:flex;flex-direction:column;align-items:stretch}
+    .side.right{grid-column:2;grid-row:1;display:flex;flex-direction:column;align-items:stretch}
+    .side .panel{width:100%;min-width:0;padding:8px;border-radius:10px}
+    .panel h3{font-size:9px;letter-spacing:1.4px;margin-bottom:6px}
+    .panel-top{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:6px}
+    .panel-top h3{margin-bottom:0}
+    .vbtn.pause.mobile-pause-entry{display:flex;width:30px;height:30px;font-size:14px;border-radius:9px;flex:0 0 auto}
+    .board-wrap{grid-column:1;grid-row:1 / span 2;margin:0;max-width:100%;align-self:start}
     .overlay{padding:16px 12px;gap:10px}
     .overlay .big{font-size:clamp(22px,7vw,30px)}
     .overlay .sub{font-size:12px;line-height:1.7;max-width:100%}
     .btn{padding:10px 22px}
-    /* Hold/Next 横向排列 */
-    .mini canvas{max-width:100%}
-    .next-list{flex-direction:row;flex-wrap:wrap;justify-content:center}
+    .stat{margin-bottom:8px}
+    .stat .label{font-size:9px;letter-spacing:1px}
+    .stat .value{font-size:20px}
+    .mini{gap:4px}
+    .mini canvas,.next-list canvas{max-width:100%;height:auto}
+    .next-list{flex-direction:column;gap:4px;justify-content:center}
+    .vpad-left{align-items:flex-end}
+    .vpad-right{align-items:flex-end}
+    .vpad-right .vbtn.hold{width:68px;height:68px;font-size:13px}
+    .vbtn.dpad{width:58px;height:58px}
   }
 
   @media (pointer:coarse) and (orientation:landscape) and (max-height:500px){
     body{align-items:center}
-    .stage{flex-direction:row;align-items:center;justify-content:center;gap:0;
+    .stage{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:0;
       max-width:none;padding:8px 220px;overflow:hidden}
-    .side{display:none}
+    .side.left,.side.right{display:none}
     .board-wrap{order:0;margin:0}
     .vpad{top:0;bottom:0;min-height:0;align-items:center;
       padding:8px 12px;background:linear-gradient(to right,rgba(10,10,18,.92),transparent 34%,transparent 66%,rgba(10,10,18,.92))}
@@ -184,14 +197,17 @@
       <div class="overlay show" id="overlay">
         <div class="big" id="ovBig">NEON TETRIS</div>
         <div class="sub" id="ovSub"></div>
-        <button class="btn" id="ovBtn">开始游戏</button>
+        <button class="btn" id="ovBtn">Start</button>
       </div>
     </div>
 
     <!-- 右侧:Next + 操作说明 -->
     <div class="side right">
       <div class="panel">
-        <h3>Next</h3>
+        <div class="panel-top">
+          <h3>Next</h3>
+          <button class="vbtn pause mobile-pause-entry" id="vPause">⏸</button>
+        </div>
         <div class="next-list" id="nextList"></div>
       </div>
       <div class="panel hint-panel">
@@ -214,19 +230,15 @@
   <!-- 虚拟按键(仅移动端显示) -->
   <div class="vpad">
     <div class="vpad-zone vpad-left">
-      <button class="vbtn hold" id="vHold">Hold</button>
       <div class="dpad-wrap">
         <button class="vbtn dpad" id="vLeft">←</button>
-        <button class="vbtn dpad" id="vRight">→</button>
         <button class="vbtn dpad" id="vDown">↓</button>
+        <button class="vbtn dpad" id="vRight">→</button>
       </div>
     </div>
     <div class="vpad-zone vpad-right">
-      <div style="display:flex;flex-direction:column;gap:12px">
-        <button class="vbtn act" id="vRotate">↻</button>
-        <button class="vbtn act" id="vDrop">⇩</button>
-      </div>
-      <button class="vbtn pause" id="vPause">⏸</button>
+      <button class="vbtn hold" id="vHold">Hold</button>
+      <button class="vbtn act" id="vRotate">↻</button>
     </div>
   </div>
 
@@ -304,9 +316,10 @@
 
     if(touchLayout){
       const compactLandscape = compactLandscapeMq.matches;
-      const vpadHeight = compactLandscape ? 16 : 228;
-      const sideInset = compactLandscape ? 440 : 24;
-      const verticalInset = compactLandscape ? 16 : vpadHeight + 24;
+      const infoPanelWidth = Math.min(Math.max(window.innerWidth * 0.28, 94), 112);
+      const vpadHeight = compactLandscape ? 16 : 180;
+      const sideInset = compactLandscape ? 440 : infoPanelWidth + 34;
+      const verticalInset = compactLandscape ? 16 : vpadHeight + 16;
       const availW = Math.max(180, Math.min(window.innerWidth - sideInset, 500));
       const availH = Math.max(300, window.innerHeight - verticalInset);
 
@@ -345,6 +358,7 @@
     draw();
     drawHold();
     drawNext();
+    if(state==='idle') setStartOverlay();
   }
   function setupMini(cv,ctx){
     const dpr=Math.min(window.devicePixelRatio||1,2);
@@ -748,7 +762,10 @@
   function setMiniDPR(cv,ctx){
     if(cv._dprSet) return;
     const dpr=Math.min(window.devicePixelRatio||1,2);
-    const w=cv.width, h=cv.height;
+    const w=cv._cssWidth || Number(cv.getAttribute('width')) || cv.width;
+    const h=cv._cssHeight || Number(cv.getAttribute('height')) || cv.height;
+    cv._cssWidth=w;
+    cv._cssHeight=h;
     cv.style.width=w+'px'; cv.style.height=h+'px';
     cv.width=Math.round(w*dpr); cv.height=Math.round(h*dpr);
     ctx.setTransform(dpr,0,0,dpr,0,0);
@@ -756,7 +773,8 @@
   }
   function drawNext(){
     nextList.innerHTML='';
-    for(let i=0;i<NEXT_COUNT;i++){
+    const count = isTouchLayout() ? 1 : NEXT_COUNT;
+    for(let i=0;i<count;i++){
       const t=queue[i]; if(!t) continue;
       const cv=document.createElement('canvas');
       cv.width=110; cv.height= i===0?66:54;
@@ -897,7 +915,7 @@
       stopDAS();
       vStopDAS(); // 清除虚拟按键 DAS
       updateVirtualButtons(); // 更新虚拟按键状态
-      showOverlay('已暂停','按 <kbd>P</kbd> 继续','继续');
+      showOverlay('PAUSED', isTouchLayout() ? 'Tap pause to resume' : 'Press <kbd>P</kbd> to resume', 'Resume');
     }
     else if(state==='pause'){
       state='play';
@@ -916,13 +934,21 @@
     updateVirtualButtons(); // 更新虚拟按键状态
     const isBest = score>=best;
     showOverlay('GAME OVER',
-      `得分 <b style="color:#fff">${score.toLocaleString()}</b> · 消除 ${lines} 行 · 等级 ${level}` +
-      (isBest&&score>0?'<br><span style="color:#ffd35c">★ 新纪录!</span>':`<br>最高纪录 ${best.toLocaleString()}`),
-      '再来一局');
+      `Score <b style="color:#fff">${score.toLocaleString()}</b> · Lines ${lines} · Level ${level}` +
+      (isBest&&score>0?'<br><span style="color:#ffd35c">New best</span>':`<br>Best ${best.toLocaleString()}`),
+      'Restart');
   }
   function showOverlay(big,sub,btn){
     ovBig.textContent=big; ovSub.innerHTML=sub; ovBtn.textContent=btn;
     overlay.classList.add('show');
+  }
+  function setStartOverlay(){
+    ovBig.textContent='NEON TETRIS';
+    ovBtn.textContent='Start';
+    ovSub.innerHTML = isTouchLayout()
+      ? 'Swipe-free mobile controls<br><span style="font-size:12px">Move · Soft Drop · Rotate · Hold</span>'
+      : 'Classic play × creative rules<br><span style="font-size:12px">SRS · 7-bag · T-Spin · Combo · Hold</span><br><br>'+
+        '<span style="font-size:12px">Keyboard:<kbd>←→</kbd><kbd>↓</kbd> move · <kbd>↑</kbd> rotate · <kbd>Space</kbd> hard drop · <kbd>C</kbd> hold</span>';
   }
 
   // ---------- 输入 ----------
@@ -1009,8 +1035,7 @@
   // ---------- 虚拟按键 ----------
   const vHold=document.getElementById('vHold'), vLeft=document.getElementById('vLeft'),
         vRight=document.getElementById('vRight'), vDown=document.getElementById('vDown'),
-        vRotate=document.getElementById('vRotate'), vDrop=document.getElementById('vDrop'),
-        vPause=document.getElementById('vPause');
+        vRotate=document.getElementById('vRotate'), vPause=document.getElementById('vPause');
 
   let vDasTimer=null, vArrTimer=null, vDasDir=0, vSoftTimer=null;
   function vStartDAS(dir){
@@ -1027,14 +1052,14 @@
   // 更新虚拟按键状态(根据游戏状态启用/禁用)
   function updateVirtualButtons(){
     const isPlayable = (state==='play');
-    [vHold,vLeft,vRight,vDown,vRotate,vDrop].forEach(btn=>{
+    [vHold,vLeft,vRight,vDown,vRotate].forEach(btn=>{
       if(isPlayable) btn.classList.remove('disabled');
       else btn.classList.add('disabled');
     });
   }
 
   // 阻止虚拟按键的默认行为和事件冒泡
-  [vHold,vLeft,vRight,vDown,vRotate,vDrop,vPause].forEach(btn=>{
+  [vHold,vLeft,vRight,vDown,vRotate,vPause].forEach(btn=>{
     btn.addEventListener('touchstart',(e)=>{e.preventDefault();e.stopPropagation();},{passive:false});
     btn.addEventListener('touchend',(e)=>{e.preventDefault();e.stopPropagation();},{passive:false});
     btn.addEventListener('touchmove',(e)=>{e.preventDefault();e.stopPropagation();},{passive:false});
@@ -1098,15 +1123,6 @@
   });
   vRotate.addEventListener('click',(e)=>handleVirtualClick(e,()=>{ flashVirtualButton(vRotate); if(state==='play') rotate(1); }));
 
-  vDrop.addEventListener('pointerdown',(e)=>{
-    e.preventDefault();
-    markVirtualPointer();
-    addPressedClass(vDrop);
-    if(state==='play') hardDrop();
-    setTimeout(()=>removePressedClass(vDrop), 100);
-  });
-  vDrop.addEventListener('click',(e)=>handleVirtualClick(e,()=>{ flashVirtualButton(vDrop); if(state==='play') hardDrop(); }));
-
   vHold.addEventListener('pointerdown',(e)=>{
     e.preventDefault();
     markVirtualPointer();
@@ -1152,8 +1168,7 @@
   grid=newGrid(); bag=[]; queue=[]; refillBag();
   for(let i=0;i<NEXT_COUNT;i++) queue.push(nextType());
   holdType=null;
-  ovSub.innerHTML='经典玩法 × 创意机制<br><span style="font-size:12px">SRS 旋转 · 7-bag · T-Spin · Combo · Hold</span><br><br>'+
-    '<span style="font-size:12px">键盘:<kbd>←→</kbd><kbd>↓</kbd> 移动 · <kbd>↑</kbd> 旋转 · <kbd>空格</kbd> 硬降 · <kbd>C</kbd> 暂存<br>移动端:使用下方虚拟按键操作</span>';
+  setStartOverlay();
   fit();
   updateVirtualButtons(); // 初始化虚拟按键状态
   raf=requestAnimationFrame(loop);

@@ -341,7 +341,7 @@
   let state;                       // 'idle' | 'play' | 'pause' | 'over' | 'win'
   let mode = 'classic';
   let snake, prevSnake;            // 蛇身格子数组(snake[0] 为头);prevSnake 为上一步位置(用于插值)
-  let dir, queue;                  // 当前方向 {x,y};方向输入队列(防 180° 反向)
+  let dir, faceDir, queue;         // 当前移动方向 / 即时朝向反馈 / 方向输入队列
   let grow;                        // 本步是否生长(吃到食物)
   let obstacles;                   // 障碍格集合 Set("x,y")(迷宫模式)
   let food, special;               // 普通食物 {x,y};特殊食物 {x,y,kind:'golden'|'power',life,maxLife}|null
@@ -431,6 +431,7 @@
     if(x===-last.x && y===-last.y) return;       // 反向忽略(防自杀)
     if(queue.length>=2) return;                  // 最多缓存 2 个,避免堆积
     queue.push({x,y});
+    faceDir = {x,y};                             // 立即给玩家转向反馈
   }
 
   // ===================== 步进(核心逻辑) =====================
@@ -445,6 +446,7 @@
   function step(){
     // 取出一个待执行方向(已在入队时校验过非反向)
     if(queue.length) dir = queue.shift();
+    faceDir = queue.length ? queue[0] : dir;
 
     // 记录上一步位置(用于插值渲染)——深拷贝
     prevSnake = snake.map(s=>({x:s.x, y:s.y}));
@@ -693,7 +695,8 @@
     bctx.shadowBlur=0;
     // 眼睛(朝向当前方向)
     const cx=x+s/2, cy=y+s/2;
-    const ex=dir.x, ey=dir.y;                    // 方向
+    const look = faceDir || dir;
+    const ex=look.x, ey=look.y;                  // 方向
     const off=s*0.2, eo=s*0.16;                  // 眼间距 / 朝向偏移
     const perpx=-ey, perpy=ex;                   // 垂直方向
     const eyes=[ [cx+perpx*off+ex*eo, cy+perpy*off+ey*eo],
@@ -881,7 +884,7 @@
     snake=[]; const hx=Math.floor(GRID/2);
     for(let i=0;i<START_LEN;i++) snake.push({x:hx-i, y:cy});
     prevSnake = snake.map(s=>({x:s.x,y:s.y}));
-    dir={x:1,y:0}; queue=[]; grow=false;
+    dir={x:1,y:0}; faceDir={x:1,y:0}; queue=[]; grow=false;
     powers={ghost:0,magnet:0,slow:0};
     score=0; eaten=0; level=1; combo=0; comboTimer=0; comboWin=COMBO_WIN_MAX;
     special=null; specialTimer=rand(SPECIAL_GAP_MIN,SPECIAL_GAP_MAX);
@@ -1102,7 +1105,7 @@
   const cy0=(GRID-1)/2, hx0=Math.floor(GRID/2);
   snake=[]; for(let i=0;i<START_LEN;i++) snake.push({x:hx0-i,y:cy0});
   prevSnake=snake.map(s=>({x:s.x,y:s.y}));
-  dir={x:1,y:0}; queue=[]; grow=false;
+  dir={x:1,y:0}; faceDir={x:1,y:0}; queue=[]; grow=false;
   powers={ghost:0,magnet:0,slow:0};
   score=0; eaten=0; level=1; combo=0; comboTimer=0; comboWin=COMBO_WIN_MAX;
   food={x:hx0+4,y:cy0}; special=null; specialTimer=0;
